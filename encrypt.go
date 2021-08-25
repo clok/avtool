@@ -42,6 +42,20 @@ func Encrypt(body, password string) (result string, err error) {
 	return
 }
 
+// see https://docs.ansible.com/ansible/latest/user_guide/vault.html#ansible-vault-payload-format-1-1-1-2
+func Encrypt2(body, password, label string) (result string, err error) {
+	salt, err := GenerateRandomBytes(32)
+	check(err)
+	// salt_64 := "2262970e2309d5da757af6c473b0ed3034209cc0d48a3cc3d648c0b174c22fde"
+	// salt,_ = hex.DecodeString(salt_64)
+	key1, key2, iv := genKeyInitctr(password, salt)
+	ciphertext := createCipherText(body, key1, iv)
+	combined := combineParts(ciphertext, key2, salt)
+	vaultText := hex.EncodeToString([]byte(combined))
+	result = formatOutput2(vaultText, label)
+	return
+}
+
 func createCipherText(body string, key1, iv []byte) []byte {
 	bs := aes.BlockSize
 	padding := (bs - len(body)%bs)
@@ -87,6 +101,33 @@ func formatOutput(vaultText string) string {
 	headerElements[0] = heading
 	headerElements[1] = version
 	headerElements[2] = cipherName
+	header := strings.Join(headerElements, ";")
+
+	elements := make([]string, 1)
+	elements[0] = header
+	for i := 0; i < len(vaultText); i += 80 {
+		end := i + 80
+		if end > len(vaultText) {
+			end = len(vaultText)
+		}
+		elements = append(elements, vaultText[i:end])
+	}
+	elements = append(elements, "")
+
+	whole := strings.Join(elements, "\n")
+	return whole
+}
+
+func formatOutput2(vaultText, labelText string) string {
+	heading := "$ANSIBLE_VAULT"
+	version := "1.2"
+	cipherName := "AES256"
+
+	headerElements := make([]string, 4)
+	headerElements[0] = heading
+	headerElements[1] = version
+	headerElements[2] = cipherName
+	headerElements[3] = labelText
 	header := strings.Join(headerElements, ";")
 
 	elements := make([]string, 1)
