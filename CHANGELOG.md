@@ -2,12 +2,25 @@
 ## [Unreleased]
 
 
+<a name="v2.2.0"></a>
+## [v2.2.0] - 2021-12-20
+### Features
+- **vault 1.2:** added support for the ansible vault v1.2 payload format ([#10](https://github.com/clok/avtool/issues/10))
+
+
 <a name="v2.1.1"></a>
 ## [v2.1.1] - 2021-05-13
+### Chore
+- update changelog for v2.1.1
+
+
+<a name="v2.1.0-2-g1dd422f"></a>
+## [v2.1.0-2-g1dd422f] - 2021-05-13
 ### Bug Fixes
 - **deps:** update golang.org/x/crypto commit hash to cd7d49e ([#7](https://github.com/clok/avtool/issues/7))
 
 ### Chore
+- update changelog for v2.1.0-2-g1dd422f
 - **ci:** added Makefile and goreleaser
 
 
@@ -140,8 +153,10 @@ Added -k flag for selective viewing & additional validations
 - to own function
 
 
-[Unreleased]: https://github.com/clok/avtool/compare/v2.1.1...HEAD
-[v2.1.1]: https://github.com/clok/avtool/compare/v2.1.0...v2.1.1
+[Unreleased]: https://github.com/clok/avtool/compare/v2.2.0...HEAD
+[v2.2.0]: https://github.com/clok/avtool/compare/v2.1.1...v2.2.0
+[v2.1.1]: https://github.com/clok/avtool/compare/v2.1.0-2-g1dd422f...v2.1.1
+[v2.1.0-2-g1dd422f]: https://github.com/clok/avtool/compare/v2.1.0...v2.1.0-2-g1dd422f
 [v2.1.0]: https://github.com/clok/avtool/compare/v2.0.3...v2.1.0
 [v2.0.3]: https://github.com/clok/avtool/compare/v2.0.2...v2.0.3
 [v2.0.2]: https://github.com/clok/avtool/compare/v2.0.1...v2.0.2
