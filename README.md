@@ -3,7 +3,7 @@
 [![License: MIT](https://img.shields.io/badge/License-GPL_v3-brightgreen.svg)](https://github.com/clok/avtool/blob/main/LICENSE)
 [![Go Report Card](https://goreportcard.com/badge/clok/avtool)](https://goreportcard.com/report/clok/avtool)
 [![Coverage Status](https://coveralls.io/repos/github/clok/avtool/badge.svg?branch=main)](https://coveralls.io/github/clok/avtool?branch=main)
-[![go.dev reference](https://img.shields.io/badge/go.dev-reference-007d9c?logo=go&logoColor=white)](https://pkg.go.dev/github.com/clok/avtool/v2?tab=overview)
+[![go.dev reference](https://img.shields.io/badge/go.dev-reference-007d9c?logo=go&logoColor=white)](https://pkg.go.dev/github.com/clok/avtool/v3?tab=overview)
 
 > NOTE: Original code written by [@pbthorste](https://github.com/pbthorste) for [https://github.com/pbthorste/avtool](https://github.com/pbthorste/avtool)
 >
