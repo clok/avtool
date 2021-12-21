@@ -2,8 +2,9 @@ package avtool
 
 import (
 	"errors"
-	"github.com/stretchr/testify/assert"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
 func Test_Encrypt_V11(t *testing.T) {
@@ -105,18 +106,6 @@ func Test_encryptV12(t *testing.T) {
 	})
 	assert.NoError(t, err)
 	assert.Equal(t, string(body), result)
-}
-
-func Test_checkVaultID(t *testing.T) {
-	var err error
-	err = checkVaultID("")
-	assert.NoError(t, err)
-
-	err = checkVaultID("1-)90$#98klascalkkDADQXASdasd=-=+_+_=-=")
-	assert.NoError(t, err)
-
-	err = checkVaultID("a;b")
-	assert.Error(t, err)
 }
 
 func Test_EncryptFile_V11(t *testing.T) {

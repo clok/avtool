@@ -4,24 +4,11 @@ import (
 	"crypto/aes"
 	"crypto/cipher"
 	"crypto/hmac"
-	"crypto/rand"
 	"crypto/sha256"
 	"encoding/hex"
-	"fmt"
 	"io/ioutil"
 	"strings"
 )
-
-// GenerateRandomBytes will generate n length bytes using rand.Read
-func GenerateRandomBytes(n int) ([]byte, error) {
-	b := make([]byte, n)
-	_, err := rand.Read(b)
-	// Note that err == nil only if we read len(b) bytes.
-	if err != nil {
-		return nil, err
-	}
-	return b, nil
-}
 
 // EncryptFileOptions is the interface used to pass data to the EncryptFile method
 type EncryptFileOptions struct {
@@ -73,13 +60,6 @@ func Encrypt(opts *EncryptOptions) (result string, err error) {
 	return encryptV12(opts)
 }
 
-func checkVaultID(vaultID string) error {
-	if strings.Contains(vaultID, ";") {
-		return fmt.Errorf("vaultID (%s) cannot contain ';'", vaultID)
-	}
-	return nil
-}
-
 // see https://github.com/ansible/ansible/blob/0b8011436dc7f842b78298848e298f2a57ee8d78/lib/ansible/parsing/vault/__init__.py#L710
 func encryptV11(opts *EncryptOptions) (result string, err error) {
 	salt, err := GenerateRandomBytes(32)
@@ -90,7 +70,7 @@ func encryptV11(opts *EncryptOptions) (result string, err error) {
 	ciphertext := createCipherText(string(*opts.Body), key1, iv)
 	combined := combineParts(ciphertext, key2, salt)
 	vaultText := hex.EncodeToString([]byte(combined))
-	result = formatOutput(vaultText)
+	result = formatOutputV11(vaultText)
 	return
 }
 
@@ -142,10 +122,6 @@ func combineParts(ciphertext, key2, salt []byte) string {
 	// nolint:unconvert
 	combined := string(hexSalt) + "\n" + hex.EncodeToString([]byte(hexHmac)) + "\n" + string(hexCipher)
 	return combined
-}
-
-func formatOutput(vaultText string) string {
-	return formatOutputV11(vaultText)
 }
 
 // https://github.com/ansible/ansible/blob/0b8011436dc7f842b78298848e298f2a57ee8d78/lib/ansible/parsing/vault/__init__.py#L268

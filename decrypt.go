@@ -13,12 +13,6 @@ import (
 	"strings"
 )
 
-func check(e error) {
-	if e != nil {
-		log.Fatalf("error: %v", e)
-	}
-}
-
 // DecryptFileOptions is the interface used to pass data to the DecryptFile method
 type DecryptFileOptions struct {
 	Filename string
@@ -111,12 +105,12 @@ See function _gen_key_initctr (in class VaultAES256)
 https://github.com/ansible/ansible/blob/0b8011436dc7f842b78298848e298f2a57ee8d78/lib/ansible/parsing/vault/__init__.py#L685
 */
 func genKeyInitctr(password string, salt []byte) (key1, key2, iv []byte) {
-	keylength := 32
-	ivlength := 16
-	key := pbkdf2.Key([]byte(password), salt, 10000, 2*keylength+ivlength, sha256.New)
-	key1 = key[:keylength]
-	key2 = key[keylength:(keylength * 2)]
-	iv = key[(keylength * 2) : (keylength*2)+ivlength]
+	keyLength := 32
+	ivLength := 16
+	key := pbkdf2.Key([]byte(password), salt, 10000, 2*keyLength+ivLength, sha256.New)
+	key1 = key[:keyLength]
+	key2 = key[keyLength:(keyLength * 2)]
+	iv = key[(keyLength * 2) : (keyLength*2)+ivLength]
 	return
 }
 
