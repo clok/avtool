@@ -64,7 +64,7 @@ func Decrypt(opts *DecryptOptions) (result string, err error) {
 	return
 }
 
-// in order to support vault files with windows line endings
+// replaceCarriageReturn in order to support vault files with windows line endings
 func replaceCarriageReturn(data string) string {
 	return strings.ReplaceAll(data, "\r", "")
 }
@@ -79,7 +79,7 @@ func splitHeader(data []byte) string {
 	header := strings.Split(lines[0], ";")
 	cipherName := strings.TrimSpace(header[2])
 	if cipherName != "AES256" {
-		panic("unsupported cipher: " + cipherName)
+		panic(fmt.Errorf("unsupported cipher: %s", cipherName))
 	}
 	body := strings.Join(lines[1:], "")
 	return body
@@ -92,18 +92,17 @@ https://github.com/ansible/ansible/blob/0b8011436dc7f842b78298848e298f2a57ee8d78
 func decodeData(body string) (salt, cryptedHmac, ciphertext []byte) {
 	decoded, _ := hex.DecodeString(body)
 	elements := strings.SplitN(string(decoded), "\n", 3)
-	salt, err1 := hex.DecodeString(elements[0])
-	if err1 != nil {
-		panic(err1)
-	}
-	cryptedHmac, err2 := hex.DecodeString(elements[1])
-	if err2 != nil {
-		panic(err2)
-	}
-	ciphertext, err3 := hex.DecodeString(elements[2])
-	if err3 != nil {
-		panic(err3)
-	}
+
+	var err error
+	salt, err = hex.DecodeString(elements[0])
+	check(err)
+
+	cryptedHmac, err = hex.DecodeString(elements[1])
+	check(err)
+
+	ciphertext, err = hex.DecodeString(elements[2])
+	check(err)
+
 	return
 }
 
@@ -131,6 +130,6 @@ func checkDigest(key2, cryptedHmac, ciphertext []byte) {
 	check(err)
 	expectedMAC := hmacDecrypt.Sum(nil)
 	if !hmac.Equal(cryptedHmac, expectedMAC) {
-		panic("digests do not match - exiting")
+		log.Fatal("digests do not match - exiting")
 	}
 }

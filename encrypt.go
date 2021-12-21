@@ -7,7 +7,7 @@ import (
 	"crypto/rand"
 	"crypto/sha256"
 	"encoding/hex"
-	"errors"
+	"fmt"
 	"io/ioutil"
 	"strings"
 )
@@ -75,7 +75,7 @@ func Encrypt(opts *EncryptOptions) (result string, err error) {
 
 func checkVaultID(vaultID string) error {
 	if strings.Contains(vaultID, ";") {
-		return errors.New("vaultID cannot contain ';'")
+		return fmt.Errorf("vaultID (%s) cannot contain ';'", vaultID)
 	}
 	return nil
 }
