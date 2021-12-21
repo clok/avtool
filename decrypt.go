@@ -16,28 +16,43 @@ import (
 func check(e error) {
 	if e != nil {
 		log.Fatalf("error: %v", e)
-		panic(e)
 	}
 }
 
-func DecryptFile(filename, password string) (result string, err error) {
-	data, err := ioutil.ReadFile(filename)
+// DecryptFileOptions is the interface used to pass data to the DecryptFile method
+type DecryptFileOptions struct {
+	Filename string
+	Password *[]byte
+}
+
+// DecryptFile reads content of filename, decrypts it and returns string
+func DecryptFile(opts *DecryptFileOptions) (result string, err error) {
+	data, err := ioutil.ReadFile(opts.Filename)
 	check(err)
-	result, err = Decrypt(string(data), password)
+	result, err = Decrypt(&DecryptOptions{
+		Data:     &data,
+		Password: opts.Password,
+	})
 	return
 }
 
+// DecryptOptions is the interface used to pass data to the Decrypt method
+type DecryptOptions struct {
+	Data     *[]byte
+	Password *[]byte
+}
+
 // Decrypt a string containing the ansible vault
-func Decrypt(data, password string) (result string, err error) {
+func Decrypt(opts *DecryptOptions) (result string, err error) {
 	defer func() {
 		if r := recover(); r != nil {
 			err = fmt.Errorf("ERROR: %v", r)
 		}
 	}()
-	data = replaceCarriageReturn(data)
+	data := replaceCarriageReturn(string(*opts.Data))
 	body := splitHeader([]byte(data))
 	salt, cryptedHmac, ciphertext := decodeData(body)
-	key1, key2, iv := genKeyInitctr(password, salt)
+	key1, key2, iv := genKeyInitctr(string(*opts.Password), salt)
 	checkDigest(key2, cryptedHmac, ciphertext)
 	aesCipher, err := aes.NewCipher(key1)
 	check(err)

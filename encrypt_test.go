@@ -6,78 +6,93 @@ import (
 )
 
 func Test_Encrypt_V11(t *testing.T) {
-	password := "asdf"
-	body := "secret"
+	password := []byte("asdf")
+	body := []byte("secret")
 	var encrypted string
 	var err error
-	encrypted, err = Encrypt(body, password, "")
+	encrypted, err = Encrypt(&EncryptOptions{
+		Body:     &body,
+		Password: &password,
+	})
 	assert.NoError(t, err)
 
 	var result string
-	result, err = Decrypt(encrypted, password)
+	data := []byte(encrypted)
+	result, err = Decrypt(&DecryptOptions{
+		Data:     &data,
+		Password: &password,
+	})
 	assert.NoError(t, err)
-	assert.Equal(t, body, result)
-}
-
-func Test_Encrypt_v2(t *testing.T) {
-	password := "asdf"
-	body := "secret"
-	label := "label"
-	var encrypted string
-	var err error
-	encrypted, err = Encrypt2(body, password, label)
-	assert.NoError(t, err)
-
-	var result string
-	result, err = Decrypt(encrypted, password)
-	assert.NoError(t, err)
-	assert.Equal(t, body, result)
+	assert.Equal(t, string(body), result)
 }
 
 func Test_Encrypt_V12(t *testing.T) {
-	password := "asdf"
-	body := "secret"
+	password := []byte("asdf")
+	body := []byte("secret")
 	var encrypted string
 	var err error
-	encrypted, err = Encrypt(body, password, "test")
+	encrypted, err = Encrypt(&EncryptOptions{
+		Body:     &body,
+		Password: &password,
+		VaultID:  "test",
+	})
 	assert.NoError(t, err)
 
 	var result string
-	result, err = Decrypt(encrypted, password)
+	data := []byte(encrypted)
+	result, err = Decrypt(&DecryptOptions{
+		Data:     &data,
+		Password: &password,
+	})
 	assert.NoError(t, err)
-	assert.Equal(t, body, result)
+	assert.Equal(t, string(body), result)
 }
 
 func Test_encryptV11(t *testing.T) {
-	password := "asdf"
-	body := "secret"
+	password := []byte("asdf")
+	body := []byte("secret")
 	var encrypted string
 	var err error
-	encrypted, err = encryptV11(body, password)
+	encrypted, err = encryptV11(&EncryptOptions{
+		Body:     &body,
+		Password: &password,
+	})
 	assert.NoError(t, err)
 
 	var result string
-	result, err = Decrypt(encrypted, password)
+	data := []byte(encrypted)
+	result, err = Decrypt(&DecryptOptions{
+		Data:     &data,
+		Password: &password,
+	})
 	assert.NoError(t, err)
-	assert.Equal(t, body, result)
+	assert.Equal(t, string(body), result)
 }
 
 func Test_encryptV12(t *testing.T) {
-	password := "asdf"
-	body := "secret"
+	password := []byte("asdf")
+	body := []byte("secret")
 	vaultID := "label"
 	var encrypted string
 	var err error
-	encrypted, err = encryptV12(body, password, vaultID)
+	encrypted, err = encryptV12(&EncryptOptions{
+		Body:     &body,
+		Password: &password,
+		VaultID:  vaultID,
+	})
 	assert.NoError(t, err)
 
 	var result string
-	result, err = Decrypt(encrypted, password)
+	data := []byte(encrypted)
+	result, err = Decrypt(&DecryptOptions{
+		Data:     &data,
+		Password: &password,
+	})
 	assert.NoError(t, err)
-	assert.Equal(t, body, result)
+	assert.Equal(t, string(body), result)
 }
 
-func Test_checkvaultID(t *testing.T) {
+func Test_checkVaultID(t *testing.T) {
 	var err error
 	err = checkVaultID("")
 	assert.NoError(t, err)
