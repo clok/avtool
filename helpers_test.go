@@ -1,16 +1,10 @@
 package avtool
 
 import (
-	"errors"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 )
-
-func Test_check(t *testing.T) {
-	assert.NotPanics(t, func() { check(nil) })
-	assert.PanicsWithError(t, "this is an error", func() { check(errors.New("this is an error")) })
-}
 
 func Test_checkVaultID(t *testing.T) {
 	var err error

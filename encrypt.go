@@ -19,8 +19,11 @@ type EncryptFileOptions struct {
 
 // EncryptFile reads content of filename provided and returns encrypted string
 func EncryptFile(opts *EncryptFileOptions) (result string, err error) {
-	data, err := ioutil.ReadFile(opts.Filename)
-	check(err)
+	var data []byte
+	data, err = ioutil.ReadFile(opts.Filename)
+	if err != nil {
+		return "", err
+	}
 	if opts.VaultID == "" {
 		result, err = encryptV11(&EncryptOptions{
 			Body:     &data,
@@ -60,38 +63,60 @@ func Encrypt(opts *EncryptOptions) (result string, err error) {
 	return encryptV12(opts)
 }
 
-// see https://github.com/ansible/ansible/blob/0b8011436dc7f842b78298848e298f2a57ee8d78/lib/ansible/parsing/vault/__init__.py#L710
-func encryptV11(opts *EncryptOptions) (result string, err error) {
-	salt, err := GenerateRandomBytes(32)
-	check(err)
+// encryptData prepares data, encrypts string for formatting
+// see https://github.com/ansible/ansible/blob/0f95371131cd41d97ad95c4e8bd983081eb29a2a/lib/ansible/parsing/vault/__init__.py#L581
+func encryptData(opts *EncryptOptions) (vaultText string, err error) {
+	var salt []byte
+	salt, err = GenerateRandomBytes(32)
+	if err != nil {
+		return "", err
+	}
 	// salt_64 := "2262970e2309d5da757af6c473b0ed3034209cc0d48a3cc3d648c0b174c22fde"
 	// salt,_ = hex.DecodeString(salt_64)
-	key1, key2, iv := genKeyInitctr(string(*opts.Password), salt)
-	ciphertext := createCipherText(string(*opts.Body), key1, iv)
-	combined := combineParts(ciphertext, key2, salt)
-	vaultText := hex.EncodeToString([]byte(combined))
-	result = formatOutputV11(vaultText)
+	key1, key2, iv := genKeyInitctr(opts.Password, salt)
+
+	var cipherText []byte
+	cipherText, err = createCipherText(opts.Body, key1, iv)
+	if err != nil {
+		return "", err
+	}
+
+	combined, err := combineParts(cipherText, key2, salt)
+	if err != nil {
+		return "", err
+	}
+
+	return hex.EncodeToString([]byte(combined)), nil
+}
+
+// encryptV11 encrypts data and formats the output in Ansible v1.1 vault format
+// see https://github.com/ansible/ansible/blob/0b8011436dc7f842b78298848e298f2a57ee8d78/lib/ansible/parsing/vault/__init__.py#L710
+func encryptV11(opts *EncryptOptions) (result string, err error) {
+	var encryptedData string
+	encryptedData, err = encryptData(opts)
+	if err != nil {
+		return "", err
+	}
+	result = formatOutputV11(encryptedData)
 	return
 }
 
+// encryptV12 encrypts data and formats the output in Ansible v1.2 vault format
 // see https://docs.ansible.com/ansible/latest/user_guide/vault.html#ansible-vault-payload-format-1-1-1-2
 // see https://github.com/ansible/ansible/blob/0f95371131cd41d97ad95c4e8bd983081eb29a2a/lib/ansible/parsing/vault/__init__.py#L581
 func encryptV12(opts *EncryptOptions) (result string, err error) {
-	salt, err := GenerateRandomBytes(32)
-	check(err)
-	// salt_64 := "2262970e2309d5da757af6c473b0ed3034209cc0d48a3cc3d648c0b174c22fde"
-	// salt,_ = hex.DecodeString(salt_64)
-	key1, key2, iv := genKeyInitctr(string(*opts.Password), salt)
-	ciphertext := createCipherText(string(*opts.Body), key1, iv)
-	combined := combineParts(ciphertext, key2, salt)
-	vaultText := hex.EncodeToString([]byte(combined))
-	result = formatOutputV12(vaultText, opts.VaultID)
+	var encryptedData string
+	encryptedData, err = encryptData(opts)
+	if err != nil {
+		return "", err
+	}
+	result = formatOutputV12(encryptedData, opts.VaultID)
 	return
 }
 
-func createCipherText(body string, key1, iv []byte) []byte {
+func createCipherText(body *[]byte, key1, iv []byte) ([]byte, error) {
 	bs := aes.BlockSize
-	padding := bs - len(body)%bs
+	padding := bs - len(string(*body))%bs
 	if padding == 0 {
 		padding = bs
 	}
@@ -100,28 +125,32 @@ func createCipherText(body string, key1, iv []byte) []byte {
 	for i := range padArray {
 		padArray[i] = byte(padChar)
 	}
-	plaintext := []byte(body)
+	plaintext := *body
 	plaintext = append(plaintext, padArray...)
 
 	aesCipher, err := aes.NewCipher(key1)
-	check(err)
+	if err != nil {
+		return nil, err
+	}
 	ciphertext := make([]byte, len(plaintext))
 
 	aesBlock := cipher.NewCTR(aesCipher, iv)
 	aesBlock.XORKeyStream(ciphertext, plaintext)
-	return ciphertext
+	return ciphertext, nil
 }
 
-func combineParts(ciphertext, key2, salt []byte) string {
+func combineParts(ciphertext, key2, salt []byte) (string, error) {
 	hmacEncrypt := hmac.New(sha256.New, key2)
 	_, err := hmacEncrypt.Write(ciphertext)
-	check(err)
+	if err != nil {
+		return "", err
+	}
 	hexSalt := hex.EncodeToString(salt)
 	hexHmac := hmacEncrypt.Sum(nil)
 	hexCipher := hex.EncodeToString(ciphertext)
 	// nolint:unconvert
 	combined := string(hexSalt) + "\n" + hex.EncodeToString([]byte(hexHmac)) + "\n" + string(hexCipher)
-	return combined
+	return combined, nil
 }
 
 // https://github.com/ansible/ansible/blob/0b8011436dc7f842b78298848e298f2a57ee8d78/lib/ansible/parsing/vault/__init__.py#L268
@@ -151,7 +180,7 @@ func formatOutputV11(vaultText string) string {
 	return whole
 }
 
-func formatOutputV12(vaultText, vaultIDText string) string {
+func formatOutputV12(vaultText, vaultID string) string {
 	heading := "$ANSIBLE_VAULT"
 	version := "1.2"
 	cipherName := "AES256"
@@ -160,7 +189,7 @@ func formatOutputV12(vaultText, vaultIDText string) string {
 	headerElements[0] = heading
 	headerElements[1] = version
 	headerElements[2] = cipherName
-	headerElements[3] = vaultIDText
+	headerElements[3] = vaultID
 	header := strings.Join(headerElements, ";")
 
 	elements := make([]string, 1)

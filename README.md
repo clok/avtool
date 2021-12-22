@@ -11,12 +11,6 @@
 
 This module provides a reimplementation of `ansible-vault` encrypt and decrypt functionality in Go.
 
-## Why the fork?
-
-As of writing the mainline has been stale for ~4 years.
-
-I have found this code to be highly useful and important for writing other `ansible-vault` related tools. I wanted to modernize the work done previously to support `go.mod` while also updating the interface as an importable module for other code.
-
 ## CLI Tool
 
 Please see [gwvault](https://github.com/GoodwayGroup/gwvault) for a purpose built `ansible-vault` binary written in go.
@@ -27,11 +21,17 @@ It leverages the work done by [@pbthorste](https://github.com/pbthorste) for [ht
 
 In the `v3.0.0` update there are breaking changes to the interface.
 
-The `Encrypt` and `Decrypt` methods now expect the `EncryptOptions` and `DecryptOptions` parameter types as inputs. 
+The `Encrypt` and `Decrypt` methods now expect the `EncryptOptions` and `DecryptOptions` parameter types as inputs.
 
 The `EncryptFile` and `DecryptFile` methods now expect the `EncryptFileOptions` and `DecryptFileOptions` parameter types as inputs.
 
 This change was made to allow for easier extension of the library without the need for future major version bumps.
+
+## Why the fork?
+
+As of writing the mainline has been stale for ~4 years.
+
+I have found this code to be highly useful and important for writing other `ansible-vault` related tools. I wanted to modernize the work done previously to support `go.mod` while also updating the interface as an importable module for other code.
 
 ## Thanks and Attribution
 

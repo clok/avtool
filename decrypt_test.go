@@ -71,3 +71,27 @@ NOOP
 		_ = splitHeader(content)
 	})
 }
+
+func Test_decodeData_error_bad_hex(t *testing.T) {
+	body := "z396630386364383839653661636361633765313362383462396239343934363939386564396431333638363066366433666438623138373866393763373265320d0a3666353866303365626337633232366161656239396466646465353263643634653561656661343461337a0d0a6432353234386461326563376134343963383963353964393463366130623766"
+	_, _, _, err := decodeData(body)
+	assert.Error(t, err)
+}
+
+func Test_decodeData_error_salt(t *testing.T) {
+	body := "61206261642073616c740a3132333435360a313233343536"
+	_, _, _, err := decodeData(body)
+	assert.Error(t, err)
+}
+
+func Test_decodeData_error_cryptedHmac(t *testing.T) {
+	body := "3132333435360a61206261642063727970740a313233343536"
+	_, _, _, err := decodeData(body)
+	assert.Error(t, err)
+}
+
+func Test_decodeData_error_cipherText(t *testing.T) {
+	body := "3132333435360a3132333435360a612062616420636970686572"
+	_, _, _, err := decodeData(body)
+	assert.Error(t, err)
+}

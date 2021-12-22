@@ -6,10 +6,10 @@ import (
 	"crypto/hmac"
 	"crypto/sha256"
 	"encoding/hex"
+	"errors"
 	"fmt"
 	"golang.org/x/crypto/pbkdf2"
 	"io/ioutil"
-	"log"
 	"strings"
 )
 
@@ -22,7 +22,9 @@ type DecryptFileOptions struct {
 // DecryptFile reads content of filename, decrypts it and returns string
 func DecryptFile(opts *DecryptFileOptions) (result string, err error) {
 	data, err := ioutil.ReadFile(opts.Filename)
-	check(err)
+	if err != nil {
+		return "", err
+	}
 	result, err = Decrypt(&DecryptOptions{
 		Data:     &data,
 		Password: opts.Password,
@@ -45,11 +47,22 @@ func Decrypt(opts *DecryptOptions) (result string, err error) {
 	}()
 	data := replaceCarriageReturn(string(*opts.Data))
 	body := splitHeader([]byte(data))
-	salt, cryptedHmac, ciphertext := decodeData(body)
-	key1, key2, iv := genKeyInitctr(string(*opts.Password), salt)
-	checkDigest(key2, cryptedHmac, ciphertext)
+	salt, cryptedHmac, ciphertext, err := decodeData(body)
+	if err != nil {
+		return "", err
+	}
+
+	key1, key2, iv := genKeyInitctr(opts.Password, salt)
+	err = checkDigest(key2, cryptedHmac, ciphertext)
+	if err != nil {
+		return "", err
+	}
+
 	aesCipher, err := aes.NewCipher(key1)
-	check(err)
+	if err != nil {
+		return "", err
+	}
+
 	aesBlock := cipher.NewCTR(aesCipher, iv)
 	plaintext := make([]byte, len(ciphertext))
 	aesBlock.XORKeyStream(plaintext, ciphertext)
@@ -83,19 +96,27 @@ func splitHeader(data []byte) string {
 See decrypt function (in class VaultAES256)
 https://github.com/ansible/ansible/blob/0b8011436dc7f842b78298848e298f2a57ee8d78/lib/ansible/parsing/vault/__init__.py#L741
 */
-func decodeData(body string) (salt, cryptedHmac, ciphertext []byte) {
-	decoded, _ := hex.DecodeString(body)
+func decodeData(body string) (salt, cryptedHmac, cipherText []byte, err error) {
+	decoded, err := hex.DecodeString(body)
+	if err != nil {
+		return nil, nil, nil, err
+	}
 	elements := strings.SplitN(string(decoded), "\n", 3)
 
-	var err error
 	salt, err = hex.DecodeString(elements[0])
-	check(err)
+	if err != nil {
+		return nil, nil, nil, err
+	}
 
 	cryptedHmac, err = hex.DecodeString(elements[1])
-	check(err)
+	if err != nil {
+		return nil, nil, nil, err
+	}
 
-	ciphertext, err = hex.DecodeString(elements[2])
-	check(err)
+	cipherText, err = hex.DecodeString(elements[2])
+	if err != nil {
+		return nil, nil, nil, err
+	}
 
 	return
 }
@@ -104,10 +125,10 @@ func decodeData(body string) (salt, cryptedHmac, ciphertext []byte) {
 See function _gen_key_initctr (in class VaultAES256)
 https://github.com/ansible/ansible/blob/0b8011436dc7f842b78298848e298f2a57ee8d78/lib/ansible/parsing/vault/__init__.py#L685
 */
-func genKeyInitctr(password string, salt []byte) (key1, key2, iv []byte) {
+func genKeyInitctr(password *[]byte, salt []byte) (key1, key2, iv []byte) {
 	keyLength := 32
 	ivLength := 16
-	key := pbkdf2.Key([]byte(password), salt, 10000, 2*keyLength+ivLength, sha256.New)
+	key := pbkdf2.Key(*password, salt, 10000, 2*keyLength+ivLength, sha256.New)
 	key1 = key[:keyLength]
 	key2 = key[keyLength:(keyLength * 2)]
 	iv = key[(keyLength * 2) : (keyLength*2)+ivLength]
@@ -118,12 +139,15 @@ func genKeyInitctr(password string, salt []byte) (key1, key2, iv []byte) {
 See decrypt function (in class VaultAES256)
 https://github.com/ansible/ansible/blob/0b8011436dc7f842b78298848e298f2a57ee8d78/lib/ansible/parsing/vault/__init__.py#L741
 */
-func checkDigest(key2, cryptedHmac, ciphertext []byte) {
+func checkDigest(key2, cryptedHmac, ciphertext []byte) error {
 	hmacDecrypt := hmac.New(sha256.New, key2)
 	_, err := hmacDecrypt.Write(ciphertext)
-	check(err)
+	if err != nil {
+		return err
+	}
 	expectedMAC := hmacDecrypt.Sum(nil)
 	if !hmac.Equal(cryptedHmac, expectedMAC) {
-		log.Fatal("digests do not match - exiting")
+		return errors.New("digests do not match - exiting")
 	}
+	return nil
 }

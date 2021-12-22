@@ -6,12 +6,6 @@ import (
 	"strings"
 )
 
-func check(err error) {
-	if err != nil {
-		panic(err)
-	}
-}
-
 func checkVaultID(vaultID string) error {
 	if strings.Contains(vaultID, ";") {
 		return fmt.Errorf("vaultID (%s) cannot contain ';'", vaultID)
