@@ -2,8 +2,23 @@
 ## [Unreleased]
 
 
+<a name="v3.0.0"></a>
+## [v3.0.0] - 2021-12-21
+### Bug Fixes
+- **deps:** update golang.org/x/crypto commit hash to 089bfa5 ([#8](https://github.com/clok/avtool/issues/8))
+
+### Chore
+- **deps:** update coverallsapp/github-action action to v1.1.3 ([#9](https://github.com/clok/avtool/issues/9))
+
+### Features
+- **structured options:** refactor methods to accept structured options and remove all panics ([#13](https://github.com/clok/avtool/issues/13))
+
+
 <a name="v2.2.0"></a>
 ## [v2.2.0] - 2021-12-20
+### Chore
+- update changelog for v2.2.0
+
 ### Features
 - **vault 1.2:** added support for the ansible vault v1.2 payload format ([#10](https://github.com/clok/avtool/issues/10))
 
@@ -153,7 +168,8 @@ Added -k flag for selective viewing & additional validations
 - to own function
 
 
-[Unreleased]: https://github.com/clok/avtool/compare/v2.2.0...HEAD
+[Unreleased]: https://github.com/clok/avtool/compare/v3.0.0...HEAD
+[v3.0.0]: https://github.com/clok/avtool/compare/v2.2.0...v3.0.0
 [v2.2.0]: https://github.com/clok/avtool/compare/v2.1.1...v2.2.0
 [v2.1.1]: https://github.com/clok/avtool/compare/v2.1.0-2-g1dd422f...v2.1.1
 [v2.1.0-2-g1dd422f]: https://github.com/clok/avtool/compare/v2.1.0...v2.1.0-2-g1dd422f
