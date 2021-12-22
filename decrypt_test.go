@@ -1,41 +1,97 @@
 package avtool
 
 import (
-	"github.com/stretchr/testify/assert"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
-func Test_Decrypt(t *testing.T) {
-	password := "asdf"
-	content := `$ANSIBLE_VAULT;1.1;AES256
+func Test_Decrypt_V11(t *testing.T) {
+	password := []byte("asdf")
+	content := []byte(`$ANSIBLE_VAULT;1.1;AES256
 39663038636438383965366163636163376531336238346239623934393436393938656439643133
 3638363066366433666438623138373866393763373265320a366635386630336562633763323236
 61616562393964666464653532636436346535616566613434613361303734373734383930323661
 6664306264366235630a643235323438646132656337613434396338396335396439346336613062
 3766
-`
-	result, err := Decrypt(content, password)
+`)
+	result, err := Decrypt(&DecryptOptions{
+		Data:     &content,
+		Password: &password,
+	})
 	assert.Equal(t, "hello", result)
 	assert.NoError(t, err)
 }
 
-func Test_Decrypt_v2(t *testing.T) {
-	password := "asdf"
-	content := `$ANSIBLE_VAULT;1.2;AES256;label
+func Test_Decrypt_V12(t *testing.T) {
+	password := []byte("asdf")
+	content := []byte(`$ANSIBLE_VAULT;1.2;AES256;label
 39663038636438383965366163636163376531336238346239623934393436393938656439643133
 3638363066366433666438623138373866393763373265320a366635386630336562633763323236
 61616562393964666464653532636436346535616566613434613361303734373734383930323661
 6664306264366235630a643235323438646132656337613434396338396335396439346336613062
 3766
-`
-	result, err := Decrypt(content, password)
+`)
+	result, err := Decrypt(&DecryptOptions{
+		Data:     &content,
+		Password: &password,
+	})
 	assert.Equal(t, "hello", result)
 	assert.NoError(t, err)
 }
 
 func Test_DecryptFile(t *testing.T) {
-	password := "asdf"
+	password := []byte("asdf")
 	filename := "./testdata/test1/secrets.yaml"
-	_, err := DecryptFile(filename, password)
+	_, err := DecryptFile(&DecryptFileOptions{
+		Filename: filename,
+		Password: &password,
+	})
 	assert.NoError(t, err)
+}
+
+func Test_splitHeader(t *testing.T) {
+	content := []byte(`$ANSIBLE_VAULT;1.2;AES256;label
+39663038636438383965366163636163376531336238346239623934393436393938656439643133
+3638363066366433666438623138373866393763373265320a366635386630336562633763323236
+61616562393964666464653532636436346535616566613434613361303734373734383930323661
+6664306264366235630a643235323438646132656337613434396338396335396439346336613062
+3766
+`)
+	expected := "396630386364383839653661636361633765313362383462396239343934363939386564396431333638363066366433666438623138373866393763373265320a366635386630336562633763323236616165623939646664646535326364363465356165666134346133613037343737343839303236616664306264366235630a6432353234386461326563376134343963383963353964393463366130623766"
+	body := splitHeader(content)
+	assert.Equal(t, expected, body)
+}
+
+func Test_splitHeader_unsupported_cipher(t *testing.T) {
+	content := []byte(`$ANSIBLE_VAULT;1.2;AES128;label
+NOOP
+`)
+	assert.PanicsWithError(t, "unsupported cipher: AES128", func() {
+		_ = splitHeader(content)
+	})
+}
+
+func Test_decodeData_error_bad_hex(t *testing.T) {
+	body := "z396630386364383839653661636361633765313362383462396239343934363939386564396431333638363066366433666438623138373866393763373265320d0a3666353866303365626337633232366161656239396466646465353263643634653561656661343461337a0d0a6432353234386461326563376134343963383963353964393463366130623766"
+	_, _, _, err := decodeData(body)
+	assert.Error(t, err)
+}
+
+func Test_decodeData_error_salt(t *testing.T) {
+	body := "61206261642073616c740a3132333435360a313233343536"
+	_, _, _, err := decodeData(body)
+	assert.Error(t, err)
+}
+
+func Test_decodeData_error_cryptedHmac(t *testing.T) {
+	body := "3132333435360a61206261642063727970740a313233343536"
+	_, _, _, err := decodeData(body)
+	assert.Error(t, err)
+}
+
+func Test_decodeData_error_cipherText(t *testing.T) {
+	body := "3132333435360a3132333435360a612062616420636970686572"
+	_, _, _, err := decodeData(body)
+	assert.Error(t, err)
 }
